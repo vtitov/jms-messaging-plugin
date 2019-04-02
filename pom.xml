@@ -3,11 +3,11 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>2.35</version>
+        <version>3.37</version>
     </parent>
 
     <artifactId>jms-messaging</artifactId>
-    <version>1.1.7-SNAPSHOT</version>
+    <version>1.1.7-kafka-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <name>JMS Messaging Plugin</name>
     <description>Plugin to listen and emit messages during the build process using a JMS Messaging Provider.</description>
@@ -63,6 +63,7 @@
         <version.jetty>9.4.15.v20190215</version.jetty>
         <!--<version.kafka>0.11.0.3</version.kafka>-->
         <version.kafka>0.10.2.0</version.kafka>
+        <version.kafka.scala>2.11</version.kafka.scala>
         <version.selenium>3.141.59</version.selenium>
     </properties>
 
@@ -204,18 +205,13 @@
             <artifactId>kafka-unit</artifactId>
             <!--<version>1.0</version>-->
             <version>0.7</version>
+            <!--<scope>provided</scope>-->
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-        <groupId>org.apache.kafka</groupId>
-        <artifactId>kafka-clients</artifactId>
-        <version>${version.kafka}</version>
-        <!--<scope>test</scope>-->
         </dependency>
 
         <!--<dependency>-->
@@ -227,16 +223,24 @@
         <!--&lt;!&ndash; Include Kafka 0.11.x &ndash;&gt;-->
         <!--<dependency>-->
             <!--<groupId>org.apache.kafka</groupId>-->
-            <!--<artifactId>kafka_2.11</artifactId>-->
+            <!--&lt;!&ndash;<artifactId>kafka_2.11</artifactId>&ndash;&gt;-->
+            <!--<artifactId>kafka_${version.kafka.scala}</artifactId>-->
             <!--<version>${version.kafka}</version>-->
             <!--&lt;!&ndash;<scope>test</scope>&ndash;&gt;-->
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.slf4j</groupId>-->
+                    <!--<artifactId>slf4j-log4j12</artifactId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
         <!--</dependency>-->
-        <!--<dependency>-->
-            <!--<groupId>org.apache.kafka</groupId>-->
-            <!--<artifactId>kafka-clients</artifactId>-->
-            <!--<version>${version.kafka}</version>-->
-            <!--&lt;!&ndash;<scope>test</scope>&ndash;&gt;-->
-        <!--</dependency>-->
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${version.kafka}</version>
+            <!--<scope>test</scope>-->
+        </dependency>
         <!--<dependency>-->
             <!--<groupId>io.confluent</groupId>-->
             <!--<artifactId>kafka-jms-client</artifactId>-->
@@ -490,6 +494,7 @@
 
                     <argLine>${argLine}</argLine>
                     <environmentVariables>
+                        <!--TODO pass path to artefact via ant variable-->
                         <JENKINS_WAR>${user.home}/.m2/repository/org/jenkins-ci/main/jenkins-war/${jenkins.version}/jenkins-war-${jenkins.version}.war</JENKINS_WAR>
                         <LOCAL_SNAPSHOTS>true</LOCAL_SNAPSHOTS>
                         <JENKINS_JAVA_OPTS2>-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=y -Dhudson.model.ParametersAction.keepUndefinedParameters=true</JENKINS_JAVA_OPTS2>
@@ -497,18 +502,18 @@
                     </environmentVariables>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-                 <executions>
-                    <execution>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
-            </plugin>
+            <!--<plugin>-->
+                <!--<groupId>org.codehaus.mojo</groupId>-->
+                <!--<artifactId>findbugs-maven-plugin</artifactId>-->
+                <!--<configuration>-->
+                    <!--<skip>true</skip>-->
+                <!--</configuration>-->
+                 <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<phase>none</phase>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            <!--</plugin>-->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>

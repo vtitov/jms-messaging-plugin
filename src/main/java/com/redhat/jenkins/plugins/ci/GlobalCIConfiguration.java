@@ -3,19 +3,14 @@ package com.redhat.jenkins.plugins.ci;
 import com.redhat.jenkins.plugins.ci.messaging.FedMsgMessagingProvider;
 import com.redhat.jenkins.plugins.ci.messaging.KafkaMessagingProvider;
 import com.redhat.jenkins.plugins.ci.provider.data.*;
-//import com.salesforce.kafka.test.KafkaTestCluster;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.PluginManager;
 import hudson.PluginWrapper;
-import hudson.init.InitMilestone;
-import hudson.init.Initializer;
 import hudson.model.Failure;
 import hudson.util.Secret;
 
-import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,7 +31,6 @@ import com.redhat.jenkins.plugins.ci.messaging.ActiveMqMessagingProvider;
 import com.redhat.jenkins.plugins.ci.messaging.JMSMessagingProvider;
 import com.redhat.jenkins.plugins.ci.messaging.topics.DefaultTopicProvider;
 import com.redhat.jenkins.plugins.ci.messaging.topics.TopicProvider.TopicProviderDescriptor;
-import scala.Option;
 
 /*
  * The MIT License
@@ -73,8 +67,8 @@ public final class GlobalCIConfiguration extends GlobalConfiguration {
     private transient Secret password;
     private transient boolean migrationInProgress = false;
 
-//    private static transient KafkaTestCluster kafkaTestCluster;
     private static transient Optional<KafkaUnit> kafkaUnit = Optional.empty();
+//    private static transient Optional<KafkaTestCluster> kafkaTestCluster = Optional.empty();
 
 
     private List<JMSMessagingProvider> configs = new ArrayList<JMSMessagingProvider>();
@@ -106,32 +100,7 @@ public final class GlobalCIConfiguration extends GlobalConfiguration {
         start();
     }
 
-    //    @Initializer(after= InitMilestone.JOB_LOADED  , before = InitMilestone.COMPLETED)
-    //    public static void afterJobLoaded() throws Exception, TimeoutException {
-    //        log.info("JOB_LOADED");
-    //
-    //        //String kafkaBrokerPortString = System.getProperty("kafka.broker.port", "9005"); // FIXME
-    //        String kafkaBrokerPortString = System.getProperty("kafka.broker.port");
-    //        if(kafkaBrokerPortString != null) {
-    //            int kafkaPort = Integer.parseInt(kafkaBrokerPortString);
-    //            kafkaUnit = new KafkaUnit(kafkaPort-1, kafkaPort);
-    //            log.info(String.format("started kafka: %s", kafkaUnit.getKafkaConnect()));
-    //            //            String kafkaBrokerPortProperty = String.format("port=%s", kafkaBrokerPortString);
-    //                        Properties properties = new Properties();
-    //            //            properties.put("port", kafkaBrokerPortString);
-    //            //            kafkaTestCluster = new KafkaTestCluster(1, properties);
-    //            //            kafkaTestCluster.start();
-    //            //            log.info("kafkaTestCluster started");
-    //            //
-    //            //        } {
-    //            //            log.info("no kafkaTestCluster");
-    //        } else {
-    //            kafkaUnit = new KafkaUnit();
-    //            log.info(String.format("started kafka: %s", kafkaUnit.getKafkaConnect()));
-    //        }
-    //
-    //    }
-    protected Optional<Integer> readKafkaBrokerPort() {
+    private Optional<Integer> readKafkaBrokerPort() {
         try {
             return Optional.ofNullable(System.getProperty("kafka.broker.port"))
                 .map(Integer::parseInt);
@@ -140,6 +109,15 @@ public final class GlobalCIConfiguration extends GlobalConfiguration {
         }
         return Optional.empty();
     }
+
+//    protected Optional<String> readKafkaLogDir() {
+//        try {
+//            return Optional.ofNullable(System.getProperty("kafka.log.dir"));
+//        } catch (Exception e) {
+//            log.log(Level.FINE, "no kafka.log.dir specified");
+//        }
+//        return Optional.empty();
+//    }
 
     protected Object readResolve() {
         if (broker != null) {
@@ -198,6 +176,59 @@ public final class GlobalCIConfiguration extends GlobalConfiguration {
         }
         return null;
     }
+
+//    protected void stop() {
+//        kafkaTestCluster.map(kc -> {
+//            try {
+//                kc.close();
+//            } catch (Exception e) {
+//                log.log(Level.FINE, "error while stopping kafka", e);
+//            }
+//            return true;
+//    });
+//    kafkaTestCluster = Optional.empty();
+//}
+//
+//    protected void start() {
+//        Thread.currentThread().setContextClassLoader(null);
+//        stop();
+//        kafkaTestCluster = readKafkaBrokerPort()
+//                .map(kafkaPort -> {
+//                    try {
+//                        log.log(Level.FINE, String.format("attempting to start kafka at port %s", kafkaPort.toString()));
+//                        Properties kafkaBrokerConfig = new Properties();
+//                        kafkaBrokerConfig.setProperty("auto.create.topics.enable", "true");
+//                        kafkaBrokerConfig.setProperty("host.name", "localhost");
+//                        kafkaBrokerConfig.setProperty("port", Integer.toString(kafkaPort));
+//                        kafkaBrokerConfig.setProperty("advertised.listeners", String.format("PLAINTEXT://localhost:%s", Integer.toString(kafkaPort)));
+//                        kafkaBrokerConfig.setProperty("listeners", String.format("PLAINTEXT://localhost:%s", Integer.toString(kafkaPort)));
+//
+//                        readKafkaLogDir().map(logDir -> {
+//                            kafkaBrokerConfig.setProperty("log.dir", logDir);
+//                            return true;
+//                        });
+//                        kafkaBrokerConfig.setProperty("log.flush.interval.messages", String.valueOf(1));
+//                        kafkaBrokerConfig.setProperty("delete.topic.enable", String.valueOf(true));
+//
+//                        ByteArrayOutputStream output = new ByteArrayOutputStream();
+//                        kafkaBrokerConfig.store(output, "kafka broker config");
+//                        log.fine(String.format("kafkaBrokerConfig: %s", new String(output.toByteArray())));
+//
+//                        val kc = new KafkaTestCluster(1, kafkaBrokerConfig);
+//                        kc.start();
+//                        log.info(String.format("started zookeeper: %s", kc.getZookeeperConnectString()));
+//                        log.info(String.format("started kafka: %s", kc.getKafkaConnectString()));
+//                        return kc;
+//                    } catch (Exception e) {
+//                        log.log(Level.FINE, "kafka error on start", e);
+//                    }
+//                    return null;
+//                });
+//        kafkaTestCluster.orElseGet(()-> {
+//            log.log(Level.FINE, "kafka not started");
+//            return null;
+//        });
+//    }
 
     protected void stop() {
         kafkaUnit.map(ku-> { ku.shutdown(); return true; });
